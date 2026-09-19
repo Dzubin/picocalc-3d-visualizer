@@ -8,3 +8,7 @@ Thumbs.db
 
 # Local AI-assistant notes, not for the public repo
 CLAUDE.md
+
+# Linux binary (built by the GitHub Actions workflow / on a Linux machine)
+/3d-visualizer-linux
+/3d-visualizer-linux.zip
