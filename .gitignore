@@ -1,0 +1,10 @@
+# Build output (the finished .exe / .uf2 files are copied to the top level and ARE committed)
+build/
+build-*/
+
+# Editor / OS cruft
+.DS_Store
+Thumbs.db
+
+# Local AI-assistant notes, not for the public repo
+CLAUDE.md
