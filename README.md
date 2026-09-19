@@ -68,6 +68,11 @@ cmake --build build
 Run `3d-visualizer-windows.exe` (also left in `build/`). SDL2 is statically linked, so it is a
 single self-contained file - no `SDL2.dll` needs to ship with it.
 
+On Linux the same commands produce `3d-visualizer-linux` (needs `libsdl2-dev`).
+The Linux release download is a .zip holding that binary plus the SDL2 shared
+library, built by the `.github/workflows/linux.yml` GitHub Actions workflow
+(Actions tab -> "Linux build" -> Run workflow).
+
 ### PicoCalc hardware
 
 Requires `PICO_SDK_PATH` set and an `arm-none-eabi` toolchain. Developed and
