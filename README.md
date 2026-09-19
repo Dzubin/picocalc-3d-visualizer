@@ -101,3 +101,7 @@ Built on the [Raspberry Pi Pico SDK](https://github.com/raspberrypi/pico-sdk)
 and the LCD/keyboard/south-bridge drivers from
 [picocalc-text-starter](https://github.com/BlairLeduc/picocalc-text-starter)
 by Blair Leduc (vendored read-only in `picocalc/drivers/`).
+
+This project is released under the MIT License (see `LICENSE`). The vendored
+drivers in `picocalc/drivers/` are Blair Leduc's, also MIT-licensed - his
+license is kept alongside them in `picocalc/drivers/LICENSE`.
