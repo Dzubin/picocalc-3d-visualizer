@@ -33,8 +33,8 @@ jobs:
       - name: Package binary + SDL2 library
         run: |
           mkdir pkg
-          cp build/3d-visualizer-linux pkg/
-          SDL_LIB=$(ldd build/3d-visualizer-linux | awk '/libSDL2-2.0.so.0/ {print $3}')
+          cp build/3d-visualizer-Linux pkg/
+          SDL_LIB=$(ldd build/3d-visualizer-Linux | awk '/libSDL2-2.0.so.0/ {print $3}')
           cp -L "$SDL_LIB" pkg/libSDL2-2.0.so.0
           cp /usr/share/doc/libsdl2-2.0-0/copyright pkg/SDL2-LICENSE.txt
           cp LICENSE pkg/LICENSE
@@ -42,7 +42,7 @@ jobs:
           PicoCalc 3D Visualizer - Linux build
           https://github.com/Dzubin/picocalc-3d-visualizer
 
-          Unzip, then run:   ./3d-visualizer-linux
+          Unzip, then run:   ./3d-visualizer-Linux
 
           libSDL2-2.0.so.0 (SDL2, zlib license - see SDL2-LICENSE.txt) sits next to
           the program and is found automatically; nothing needs installing. You
@@ -52,17 +52,17 @@ jobs:
           ESC quits.
           TXT
           # The binary must pick up the bundled SDL2, not a system copy.
-          ldd pkg/3d-visualizer-linux | grep -i sdl2
-          ldd pkg/3d-visualizer-linux | grep -i sdl2 | grep -q "pkg/libSDL2"
-          (cd pkg && zip -r ../3d-visualizer-linux.zip .)
-          unzip -l 3d-visualizer-linux.zip
+          ldd pkg/3d-visualizer-Linux | grep -i sdl2
+          ldd pkg/3d-visualizer-Linux | grep -i sdl2 | grep -q "pkg/libSDL2"
+          (cd pkg && zip -r ../3d-visualizer-Linux.zip .)
+          unzip -l 3d-visualizer-Linux.zip
 
       - uses: actions/upload-artifact@v4
         with:
-          name: 3d-visualizer-linux
-          path: 3d-visualizer-linux.zip
+          name: 3d-visualizer-Linux
+          path: 3d-visualizer-Linux.zip
 
       - name: Attach zip to the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ inputs.tag }}" 3d-visualizer-linux.zip --clobber
+        run: gh release upload "${{ inputs.tag }}" 3d-visualizer-Linux.zip --clobber

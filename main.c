@@ -31,7 +31,8 @@
 //                        - in case it's too slow on real hardware; also
 //                        turns face colour on/off, since colour only ever
 //                        draws alongside hidden-line removal
-//    ESC .............. quit (desktop build only)
+//    ESC .............. quit (desktop build closes; PicoCalc build also
+//                        takes Q and leaves for the PicoCalc UF2 Loader menu)
 //    ~  (tilde) ....... reboot into BOOTSEL mode (PicoCalc build only)
 //
 //  Source layout:

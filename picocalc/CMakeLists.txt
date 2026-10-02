@@ -85,13 +85,12 @@ target_link_libraries(picocalc-3d-visualizer
         hardware_gpio
         hardware_i2c
         hardware_clocks
+        hardware_watchdog   # watchdog_reboot(): leaving for the UF2 Loader
         )
 
-pico_add_extra_outputs(picocalc-3d-visualizer)
-
-# Copy the finished .uf2 to the top-level project folder with the chip name in
-# its file name (picocalc-3d-visualizer-RP2040.uf2 / ...-RP2350.uf2), so the
-# RP2040 and RP2350 builds can sit side by side.
+# The chip is part of every output file name (3d-visualizer-RP2040.uf2 /
+# 3d-visualizer-RP2350.uf2, and the matching .elf/.bin/.hex), so a downloaded file
+# always says which board it was built for.
 if(PICO_PLATFORM MATCHES "^rp2040")
     set(CHIP_NAME RP2040)
 elseif(PICO_PLATFORM MATCHES "^rp2350")
@@ -99,8 +98,15 @@ elseif(PICO_PLATFORM MATCHES "^rp2350")
 else()
     set(CHIP_NAME ${PICO_PLATFORM})
 endif()
+set_target_properties(picocalc-3d-visualizer PROPERTIES OUTPUT_NAME 3d-visualizer-${CHIP_NAME})
+
+pico_add_extra_outputs(picocalc-3d-visualizer)
+
+# Copy the finished .uf2 (same name) to the top-level project folder, so the
+# RP2040 and RP2350 builds can sit side by side.
 add_custom_command(TARGET picocalc-3d-visualizer POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-                $<TARGET_FILE_DIR:picocalc-3d-visualizer>/$<TARGET_FILE_BASE_NAME:picocalc-3d-visualizer>.uf2
-                ${CMAKE_CURRENT_LIST_DIR}/../picocalc-3d-visualizer-${CHIP_NAME}.uf2
-        )
+    COMMAND ${CMAKE_COMMAND} -E copy
+            $<TARGET_FILE_DIR:picocalc-3d-visualizer>/$<TARGET_FILE_BASE_NAME:picocalc-3d-visualizer>.uf2
+            ${CMAKE_CURRENT_LIST_DIR}/../
+)
+

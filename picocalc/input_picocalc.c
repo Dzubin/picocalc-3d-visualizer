@@ -2,10 +2,27 @@
 #include "../constants.h"
 #include "drivers/keyboard.h"
 #include "pico/bootrom.h"
+#include "pico/stdlib.h"
+#include "hardware/watchdog.h"   /* watchdog_hw, watchdog_reboot() - exit to the UF2 Loader */
 
 /* Referenced by drivers/keyboard.c (set when the Brk key is pressed). Not
    used here, but the driver needs the symbol to link. */
 volatile bool user_interrupt = false;
+
+/* Leaves the program for the PicoCalc UF2 Loader's menu: asks the loader for
+   its menu (see LOADER_COMMAND_MAGIC in constants.h) and reboots with the
+   watchdog. If the program was flashed straight to the chip with no loader,
+   nothing reads the request and it simply restarts. Never returns. */
+static void exit_to_loader(void)
+{
+    watchdog_hw->scratch[LOADER_SCRATCH_MODE] = LOADER_BOOT_MODE_SD;
+    watchdog_hw->scratch[LOADER_SCRATCH_ARGUMENT] = 0;
+    watchdog_hw->scratch[LOADER_SCRATCH_MAGIC] = LOADER_COMMAND_MAGIC;
+    watchdog_reboot(0, 0, LOADER_REBOOT_DELAY_MS);
+
+    for (;;)
+        tight_loop_contents();      /* the reboot comes in a few milliseconds */
+}
 
 /* The keyboard driver auto-repeats a held key into its queue roughly every
    100ms (KEY_STATE_HOLD - see drivers/keyboard.c) and never reports a
@@ -43,6 +60,11 @@ void input_poll(input_state_t *state)
         case '~':
             rom_reset_usb_boot(0, 0);
             break;
+        case KEY_ESC:
+        case 'Q':
+        case 'q':
+            exit_to_loader();       /* does not return */
+            break;
         case KEY_LEFT:  left_ticks = PICOCALC_KEY_HOLD_TIMEOUT_FRAMES; break;
         case KEY_RIGHT: right_ticks = PICOCALC_KEY_HOLD_TIMEOUT_FRAMES; break;
         case KEY_UP:    up_ticks = PICOCALC_KEY_HOLD_TIMEOUT_FRAMES; break;
@@ -65,7 +87,7 @@ void input_poll(input_state_t *state)
     state->zoom_in = zoom_in_ticks > 0;
     state->zoom_out = zoom_out_ticks > 0;
     state->toggle_hidden_line = toggle_hidden_line;
-    state->quit = 0;   /* nothing quits on PicoCalc - '~' reboots instead */
+    state->quit = 0;   /* ESC / Q reboot into the UF2 Loader above, '~' into BOOTSEL */
 
     if (left_ticks > 0) left_ticks--;
     if (right_ticks > 0) right_ticks--;

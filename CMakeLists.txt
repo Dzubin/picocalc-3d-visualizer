@@ -8,11 +8,11 @@ project(picocalc-3d-visualizer-sdl2 C)
 
 set(CMAKE_C_STANDARD 11)
 
-# Platform in the executable's file name (see README): -windows.exe / -linux.
+# Platform in the executable's file name (see README): -Windows.exe / -Linux.
 if(WIN32)
-    set(APP_NAME 3d-visualizer-windows)
+    set(APP_NAME 3d-visualizer-Windows)
 else()
-    set(APP_NAME 3d-visualizer-linux)
+    set(APP_NAME 3d-visualizer-Linux)
 endif()
 
 find_package(PkgConfig REQUIRED)
@@ -59,11 +59,24 @@ if(WIN32)
     target_link_libraries(${APP_NAME} PRIVATE ${SDL2_STATIC_LIBRARIES})
     target_link_options(${APP_NAME} PRIVATE -static ${SDL2_STATIC_LDFLAGS_OTHER})
 else()
-    # Linux: link SDL2 dynamically; the release .zip ships libSDL2 next to the
-    # binary, and $ORIGIN lets the binary find it there.
+    # Linux: link SDL2 dynamically and ship the library beside the binary;
+    # $ORIGIN lets the binary find it there.
     target_link_directories(${APP_NAME} PRIVATE ${SDL2_LIBRARY_DIRS})
     target_link_libraries(${APP_NAME} PRIVATE ${SDL2_LIBRARIES} m)
     target_link_options(${APP_NAME} PRIVATE "LINKER:-rpath,$ORIGIN")
+
+    # Find the real shared library (following the .so symlinks) and copy it,
+    # under its soname, next to the binary in the build folder and in the
+    # top-level project folder.
+    find_library(SDL2_SHARED_LIB NAMES libSDL2-2.0.so.0 SDL2-2.0 SDL2 HINTS ${SDL2_LIBRARY_DIRS})
+    if(NOT SDL2_SHARED_LIB)
+        message(FATAL_ERROR "libSDL2 shared library not found - install the SDL2 development package (e.g. libsdl2-dev)")
+    endif()
+    get_filename_component(SDL2_SHARED_REAL "${SDL2_SHARED_LIB}" REALPATH)
+    add_custom_command(TARGET ${APP_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy "${SDL2_SHARED_REAL}" $<TARGET_FILE_DIR:${APP_NAME}>/libSDL2-2.0.so.0
+            COMMAND ${CMAKE_COMMAND} -E copy "${SDL2_SHARED_REAL}" ${CMAKE_CURRENT_LIST_DIR}/libSDL2-2.0.so.0
+            )
 endif()
 
 # Copy the finished executable to the top-level project folder (this file's

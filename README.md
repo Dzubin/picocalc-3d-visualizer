@@ -48,7 +48,10 @@ frame rate both with and without it.
 - **H** - toggle hidden-line removal (and with it, face colour) on/off
   (watch the "H KEY=HLR:1"/"H KEY=HLR:0" indicator, top-right) - useful for
   comparing the frame rate on real hardware.
-- **ESC** - quit (desktop build only).
+- **ESC** - quit: the desktop build closes; the PicoCalc build leaves for the
+  PicoCalc **UF2 Loader** menu (it asks the loader for its menu through the
+  watchdog scratch registers; with no loader installed the program just
+  restarts). **Q** does the same on the PicoCalc build.
 - **`~`** (SHIFT + backtick) - reboot into BOOTSEL mode (PicoCalc build
   only, works at all times).
 
@@ -65,13 +68,16 @@ cmake -B build -G Ninja
 cmake --build build
 ```
 
-Run `3d-visualizer-windows.exe` (also left in `build/`). SDL2 is statically linked, so it is a
+Run `3d-visualizer-Windows.exe` (also left in `build/`). SDL2 is statically linked, so it is a
 single self-contained file - no `SDL2.dll` needs to ship with it.
 
-On Linux the same commands produce `3d-visualizer-linux` (needs `libsdl2-dev`).
-The Linux release download is a .zip holding that binary plus the SDL2 shared
-library, built by the `.github/workflows/linux.yml` GitHub Actions workflow
-(Actions tab -> "Linux build" -> Run workflow).
+On Linux the same commands produce `3d-visualizer-Linux` (needs `libsdl2-dev`).
+SDL2 is linked dynamically there, and the build copies `libSDL2-2.0.so.0` next to
+the binary (in `build/` and the top-level folder, found through an `$ORIGIN`
+run-path) - keep the two files together. The Linux release download is a .zip
+holding that binary plus the SDL2 shared library, built by the
+`.github/workflows/linux.yml` GitHub Actions workflow (Actions tab -> "Linux
+build" -> Run workflow).
 
 ### PicoCalc hardware
 
@@ -84,14 +90,14 @@ cmake -B build -G Ninja -DPICO_BOARD=pico2
 cmake --build build
 ```
 
-Flash `picocalc-3d-visualizer-RP2350.uf2` (each build copies its .uf2 to the
+Flash `3d-visualizer-RP2350.uf2` (each build copies its .uf2 to the
 top-level project folder, with the chip name in the file name) by copying it
 to the `RPI-RP2` BOOTSEL drive.
 
 ### RP2040
 
 Building with `-DPICO_BOARD=pico` (into its own build folder, e.g.
-`-B build-rp2040`; it produces `picocalc-3d-visualizer-RP2040.uf2`) links successfully within the RP2040's
+`-B build-rp2040`; it produces `3d-visualizer-RP2040.uf2`) links successfully within the RP2040's
 264KB of RAM (about 232KB used), but only because two RAM-saving options in
 `constants.h` are on: `ENABLE_INDEXED_COLOR` (one byte per pixel instead of
 two in the colour framebuffer) and `ENABLE_REDUCED_DEPTH_PRECISION` (an
