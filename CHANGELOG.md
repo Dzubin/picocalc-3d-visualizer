@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [V1.0RC2] - 2026-10-02
+
 ### Added
 - Build outputs are named without the `picocalc-` prefix, since the chip or system
   at the end of the name already says what they are for: `3d-visualizer-RP2040.uf2`, `3d-visualizer-RP2350.uf2`, `3d-visualizer-Windows.exe` and `3d-visualizer-Linux`.
