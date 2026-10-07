@@ -8,8 +8,8 @@ PicoCalc, easy to fork and play with. The scene is 8 objects, one of each
 approved type: a cube, a square-base pyramid, a tetrahedron, an octagonal
 prism (a stand-in for a cylinder), a house, a line, a sphere (a 20-face
 icosahedron), and a single-pixel star. They sit in 3D space with the X/Y/Z
-axes drawn through the origin, viewed from a free-flight camera: you fly it
-through the scene with the arrow keys and F1/F2, and pitch, yaw and roll it
+axes drawn through the origin, viewed from a camera that moves over the surface of a sphere with the arrow
+keys (F1/F2 change the sphere's size) and can be pitched, yawed and rolled
 with the P, Y and R keys. Hidden-line
 removal (edges and stars alike hidden behind an object's own far side or
 behind a different object) can be toggled on and off live, and while it's
@@ -42,20 +42,23 @@ frame rate both with and without it.
 
 ## Controls
 
-- **UP / DOWN** - fly forward / backward along the way you are looking
-  (pitch the view up and UP climbs as it goes forward).
-- **LEFT / RIGHT** - fly sideways, level with the ground. Rolling the view
-  never changes where the arrow keys take you.
-- **F1 / F2** - fly straight up / down.
+- **LEFT / RIGHT** - move the camera round the sphere's vertical axis.
+- **UP / DOWN** - move the camera up / down over the sphere, over the top
+  and down the other side if you keep going. The camera always faces the
+  centre of the sphere. The arrow keys work in the world's frame, so rolling
+  the view never changes where they take you.
+- **F1 / F2** - zoom in / out (make the sphere smaller / larger).
 - **p / P** - pitch the view up / down (`P` is SHIFT + `p`).
 - **y / Y** - yaw (turn) the view right / left.
 - **r / R** - roll (bank) the view right / left.
 - **z / Z** - put the camera back at its starting place, looking at the
   origin.
 
-  The camera turns about its own axes like an aircraft, so you can pitch
-  straight over the top or roll any amount. It stops at a boundary sphere
-  around the scene, and it cannot fly into a solid object.
+  The centre of the sphere is the point straight ahead of the camera. It
+  starts at the origin, and pitch and yaw turn the camera where it is, so
+  they move the centre (roll does not). The arrow keys then move the camera
+  round the new centre. The camera stops at a boundary sphere around the
+  scene, and cannot go inside a solid object.
 - **H** - toggle hidden-line removal (and with it, face colour) on/off
   (watch the "H KEY=HLR:1"/"H KEY=HLR:0" indicator, top-right) - useful for
   comparing the frame rate on real hardware.

@@ -3,16 +3,17 @@
 ## [Unreleased]
 
 ### Changed
-- The orbit camera is now a free-flight camera. `p`/`P` pitch, `y`/`Y` yaw and
-  `r`/`R` roll the view (the capital letter, SHIFT + the key, is the other
-  direction), UP/DOWN fly forward and backward along the line of sight,
-  LEFT/RIGHT fly sideways level with the ground (a roll does not change
-  where they go), F1/F2 fly up and down (they used to zoom), and `z` or `Z`
-  puts the camera back at its starting place. The camera is kept inside a
-  boundary sphere (`CAMERA_BOUNDARY_RADIUS`) and outside every solid
-  object (`CAMERA_SHAPE_CLEARANCE`). The camera keeps its axes as vectors
-  rather than angles, so there is no pole or gimbal lock. The old orbit
-  camera is on the `main` branch and the `before-free-flight` tag.
+- `p`/`P` pitch, `y`/`Y` yaw and `r`/`R` roll the camera (the capital letter,
+  SHIFT + the key, is the other direction), and `z` or `Z` puts it back at its
+  starting place. The camera is still on a sphere and faces its centre, and the
+  arrow keys still move it over the sphere's surface (LEFT/RIGHT round the
+  world's vertical axis, UP/DOWN over the top and bottom, in the world's frame
+  so a roll never changes them), but the centre is now the point straight ahead
+  of the camera at the sphere's radius, so pitch and yaw (which turn the camera
+  where it is) move the centre; roll does not. F1/F2 still change the radius.
+  The camera is kept inside a boundary sphere (`CAMERA_BOUNDARY_RADIUS`) and
+  outside every solid object (`CAMERA_SHAPE_CLEARANCE`). It keeps its axes as
+  vectors rather than angles, so there is no pole or gimbal lock.
 - Faces that reach behind the camera are clipped to the near plane before
   they are used for hidden-line removal and colour fill. Before, a face with
   any corner behind the camera was dropped whole, which was fine while the

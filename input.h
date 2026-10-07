@@ -12,9 +12,9 @@
 #define INPUT_H
 
 typedef struct {
-    int left, right;          // arrow keys: fly sideways (see camera_fly())
-    int up, down;             // arrow keys: fly forward / backward
-    int rise, descend;        // F1 / F2: fly straight up / down
+    int left, right;          // arrow keys: move over the sphere round the vertical axis (see camera_orbit())
+    int up, down;             // arrow keys: move up / down over the sphere
+    int zoom_in, zoom_out;    // F1 / F2: shrink / grow the sphere (see camera_zoom())
     int pitch_up, pitch_down; // p / P (SHIFT + p): tilt the view up / down (see camera_turn())
     int yaw_right, yaw_left;  // y / Y: turn the view right / left
     int roll_right, roll_left; // r / R: bank the view right / left

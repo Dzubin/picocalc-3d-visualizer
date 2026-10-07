@@ -6,11 +6,12 @@
 //  octagonal prism, house, line, sphere, and star, one of each - each with
 //  its own hand-picked position, size, and colour (see shapes.c's
 //  scene_shapes[] table), in 3D space with the X/Y/Z axes drawn through
-//  the origin. The camera is a free-flight viewpoint: P, Y and R pitch,
-//  yaw and roll it, the arrow keys fly it forward/back/left/right and F1/F2
-//  fly it up/down. A solid object's face colour only ever shows while
-//  hidden-line removal is on (see ENABLE_FACE_COLOR in constants.h); a
-//  star's colour always shows.
+//  the origin. The camera moves over the surface of a sphere with the arrow
+//  keys, always facing the sphere's centre; F1/F2 change the sphere's radius.
+//  P, Y and R pitch, yaw and roll the camera where it is, which moves the
+//  sphere's centre (roll does not). A solid object's face colour only ever
+//  shows while hidden-line removal is on (see ENABLE_FACE_COLOR in
+//  constants.h); a star's colour always shows.
 //
 //  This is stage 3 of a multi-stage project (stage 1 was a star cloud
 //  instead of solid shapes - dropped for being too slow to redraw every
@@ -25,14 +26,15 @@
 //  ------------------------------------------------------------------------
 //  Controls
 //  ------------------------------------------------------------------------
-//    UP / DOWN ........ fly forward / backward along the line of sight
-//    LEFT / RIGHT ..... fly sideways (level with the ground, never tipped by roll)
-//    F1 / F2 .......... fly straight up / down
+//    LEFT / RIGHT ..... move round the sphere's vertical axis
+//    UP / DOWN ........ move up / down over the sphere (through the poles)
+//    F1 / F2 .......... zoom in / out (shrink / grow the sphere)
 //    p / P ............ pitch the view up / down (P is SHIFT + p)
 //    y / Y ............ yaw the view right / left
 //    r / R ............ roll (bank) the view right / left
 //    z / Z ............ back to the starting view
-//    The camera is held inside a boundary sphere and out of the solid objects.
+//    The arrows work in the world's frame, so a roll never changes them. The
+//    camera is held inside a boundary sphere and out of the solid objects.
 //    H ................ toggle hidden-line removal on/off (see hidden_line.h)
 //                        - in case it's too slow on real hardware; also
 //                        turns face colour on/off, since colour only ever
@@ -44,7 +46,7 @@
 //  Source layout:
 //    constants.h ......... every tunable value and colour
 //    vec3.h .............. portable 3D vector math
-//    camera.h / .c ....... the free-flight camera
+//    camera.h / .c ....... the camera (on a sphere round a movable centre)
 //    mesh_definitions.h ... raw solid-object topology (cube, pyramid,
 //                          tetrahedron, octagonal prism, house, line,
 //                          sphere) - not meant to be edited, see its own
@@ -112,9 +114,10 @@ int main(void)
 static void apply_input(camera_t *cam, const input_state_t *in, float dt_seconds)
 {
     float turn = CAMERA_TURN_SPEED_DEG_PER_SEC * dt_seconds;
-    float move = CAMERA_MOVE_SPEED_UNITS_PER_SEC * dt_seconds;
+    float orbit = CAMERA_ORBIT_SPEED_DEG_PER_SEC * dt_seconds;
+    float zoom = CAMERA_ZOOM_SPEED_UNITS_PER_SEC * dt_seconds;
     float pitch = 0.0f, yaw = 0.0f, roll = 0.0f;
-    float forward = 0.0f, strafe = 0.0f, rise = 0.0f;
+    float azimuth = 0.0f, elevation = 0.0f;
 
     if (in->reset_camera) {
         camera_reset(cam);
@@ -129,11 +132,12 @@ static void apply_input(camera_t *cam, const input_state_t *in, float dt_seconds
     if (in->roll_left)  roll -= turn;
     camera_turn(cam, pitch, yaw, roll);
 
-    if (in->up)      forward += move;
-    if (in->down)    forward -= move;
-    if (in->right)   strafe += move;
-    if (in->left)    strafe -= move;
-    if (in->rise)    rise += move;
-    if (in->descend) rise -= move;
-    camera_fly(cam, forward, strafe, rise);
+    if (in->right) azimuth += orbit;
+    if (in->left)  azimuth -= orbit;
+    if (in->up)    elevation += orbit;
+    if (in->down)  elevation -= orbit;
+    camera_orbit(cam, azimuth, elevation);
+
+    if (in->zoom_in)  camera_zoom(cam, -zoom);
+    if (in->zoom_out) camera_zoom(cam, zoom);
 }

@@ -15,7 +15,7 @@ void input_poll(input_state_t *state)
     int shifted;
 
     state->left = state->right = state->up = state->down = 0;
-    state->rise = state->descend = 0;
+    state->zoom_in = state->zoom_out = 0;
     state->pitch_up = state->pitch_down = 0;
     state->yaw_right = state->yaw_left = 0;
     state->roll_right = state->roll_left = 0;
@@ -38,8 +38,8 @@ void input_poll(input_state_t *state)
     if (keys[SDL_SCANCODE_RIGHT]) state->right = 1;
     if (keys[SDL_SCANCODE_UP])    state->up = 1;
     if (keys[SDL_SCANCODE_DOWN])  state->down = 1;
-    if (keys[SDL_SCANCODE_F1])    state->rise = 1;
-    if (keys[SDL_SCANCODE_F2])    state->descend = 1;
+    if (keys[SDL_SCANCODE_F1])    state->zoom_in = 1;
+    if (keys[SDL_SCANCODE_F2])    state->zoom_out = 1;
 
     /* p, y and r turn one way, and the same key with SHIFT the other, like
        the capital letters the PicoCalc keyboard sends. */

@@ -7,11 +7,13 @@
 
 /* Below this length the cross product of the line of sight and the world's
    up is too short to give a direction (looking almost straight up or down),
-   so the camera's own right vector is used for strafing instead. */
-#define STRAFE_DEGENERATE_LENGTH 0.05f
+   so the horizontal axis kept in camera_t.side is left as it was. */
+#define SIDE_DEGENERATE_LENGTH 0.05f
 
 static void rotate_pair(vec3_t *a, vec3_t *b, float angle);
+static vec3_t rotate_about(vec3_t v, vec3_t axis, float angle);
 static void keep_at_right_angles(camera_t *cam);
+static void follow_side_axis(camera_t *cam);
 static void keep_inside_flight_limits(camera_t *cam);
 
 void camera_init(camera_t *cam)
@@ -26,16 +28,23 @@ void camera_reset(camera_t *cam)
     float el = DEG2RAD(CAMERA_START_ELEVATION_DEG);
     float horiz = CAMERA_START_DISTANCE * cosf(el);
 
+    cam->radius = CAMERA_START_DISTANCE;
     cam->position = vec3_make(horiz * sinf(az), CAMERA_START_DISTANCE * sinf(el), horiz * cosf(az));
     cam->forward = vec3_normalize(vec3_scale(cam->position, -1.0f));
     cam->right = vec3_make(cosf(az), 0.0f, -sinf(az));
     cam->up = vec3_cross(cam->right, cam->forward);
+    cam->side = cam->right;
+}
+
+vec3_t camera_center(const camera_t *cam)
+{
+    return vec3_add(cam->position, vec3_scale(cam->forward, cam->radius));
 }
 
 /* Turns a pair of the camera's axes towards each other by angle (radians):
-   a becomes a cos + b sin and b becomes b cos - a sin. Every turn below is
-   this on a different pair, so the third axis (the one being turned about)
-   is untouched. */
+   a becomes a cos + b sin and b becomes b cos - a sin. Every turn in
+   camera_turn() is this on a different pair, so the third axis (the one
+   being turned about) is untouched. */
 static void rotate_pair(vec3_t *a, vec3_t *b, float angle)
 {
     float c = cosf(angle), s = sinf(angle);
@@ -46,17 +55,30 @@ static void rotate_pair(vec3_t *a, vec3_t *b, float angle)
     *b = new_b;
 }
 
+/* v turned about the unit vector axis by angle (radians), the right-hand
+   way (Rodrigues' formula). */
+static vec3_t rotate_about(vec3_t v, vec3_t axis, float angle)
+{
+    float c = cosf(angle), s = sinf(angle);
+    vec3_t along = vec3_scale(axis, vec3_dot(axis, v) * (1.0f - c));
+
+    return vec3_add(vec3_add(vec3_scale(v, c), vec3_scale(vec3_cross(axis, v), s)), along);
+}
+
 // Author: Thomas Dzubin
 void camera_turn(camera_t *cam, float pitch_deg, float yaw_deg, float roll_deg)
 {
     /* Pitch is about right: forward tilts towards up. Yaw is about up:
        forward turns towards right. Roll is about forward: right and up turn
-       with it, right tipping down (a roll to the right), hence the minus. */
+       with it, right tipping down (a roll to the right), hence the minus.
+       The camera stays where it is, so a pitch or a yaw swings the centre
+       of the sphere (it is always straight ahead) and a roll does not. */
     if (pitch_deg != 0.0f) rotate_pair(&cam->forward, &cam->up, DEG2RAD(pitch_deg));
     if (yaw_deg != 0.0f)   rotate_pair(&cam->forward, &cam->right, DEG2RAD(yaw_deg));
     if (roll_deg != 0.0f)  rotate_pair(&cam->right, &cam->up, -DEG2RAD(roll_deg));
 
     keep_at_right_angles(cam);
+    follow_side_axis(cam);
 }
 
 /* Puts forward, up and right back at exact right angles and unit length (a
@@ -69,24 +91,73 @@ static void keep_at_right_angles(camera_t *cam)
     cam->right = vec3_cross(cam->forward, cam->up);
 }
 
-// Author: Thomas Dzubin
-void camera_fly(camera_t *cam, float forward_units, float strafe_units, float rise_units)
+/* Keeps camera_t.side, the axis the UP and DOWN arrows turn about, equal to
+   the horizontal direction at right angles to the line of sight. That comes
+   from the line of sight and the world's up only, never from the camera's own
+   right vector, which tips when the camera rolls, so a roll never changes
+   what the arrows do. The cross product flips its sign when the line of sight
+   passes through straight up or down, which would turn the UP arrow round in
+   the middle of going over the top, so the new axis is flipped back to the
+   side the old one was on. This runs on every change of direction (a frame at
+   a time, so the steps are small) and that is what keeps the two together. */
+static void follow_side_axis(camera_t *cam)
 {
     vec3_t world_up = vec3_make(0.0f, 1.0f, 0.0f);
-    vec3_t side = vec3_cross(cam->forward, world_up);
+    vec3_t axis = vec3_cross(cam->forward, world_up);
 
-    /* The sideways direction comes from the line of sight and the world's
-       up only, never from the camera's own right vector, because that one
-       tips when the camera rolls. */
-    if (vec3_length(side) < STRAFE_DEGENERATE_LENGTH) {
-        side = vec3_make(cam->right.x, 0.0f, cam->right.z);
+    if (vec3_length(axis) < SIDE_DEGENERATE_LENGTH) return;
+
+    axis = vec3_normalize(axis);
+    if (vec3_dot(axis, cam->side) < 0.0f) axis = vec3_scale(axis, -1.0f);
+    cam->side = axis;
+}
+
+// Author: Thomas Dzubin
+void camera_orbit(camera_t *cam, float azimuth_deg, float elevation_deg)
+{
+    vec3_t world_up = vec3_make(0.0f, 1.0f, 0.0f);
+    vec3_t center = camera_center(cam);
+    vec3_t offset = vec3_sub(cam->position, center);
+
+    /* Both turns move the whole camera, its position and its three
+       directions, rigidly about the centre, so it still faces the centre
+       afterwards. A positive azimuth is a positive turn about the world's
+       up (the camera goes round from +Z towards +X); going up over the
+       sphere is a negative turn about the side axis. */
+    if (azimuth_deg != 0.0f) {
+        float a = DEG2RAD(azimuth_deg);
+
+        offset = rotate_about(offset, world_up, a);
+        cam->forward = rotate_about(cam->forward, world_up, a);
+        cam->up = rotate_about(cam->up, world_up, a);
+        cam->right = rotate_about(cam->right, world_up, a);
+        cam->side = rotate_about(cam->side, world_up, a);
     }
-    side = vec3_normalize(side);
+    if (elevation_deg != 0.0f) {
+        float a = -DEG2RAD(elevation_deg);
 
-    cam->position = vec3_add(cam->position, vec3_scale(cam->forward, forward_units));
-    cam->position = vec3_add(cam->position, vec3_scale(side, strafe_units));
-    cam->position = vec3_add(cam->position, vec3_scale(world_up, rise_units));
+        offset = rotate_about(offset, cam->side, a);
+        cam->forward = rotate_about(cam->forward, cam->side, a);
+        cam->up = rotate_about(cam->up, cam->side, a);
+        cam->right = rotate_about(cam->right, cam->side, a);
+    }
 
+    cam->position = vec3_add(center, offset);
+    keep_at_right_angles(cam);
+    follow_side_axis(cam);
+    keep_inside_flight_limits(cam);
+}
+
+// Author: Thomas Dzubin
+void camera_zoom(camera_t *cam, float delta_units)
+{
+    vec3_t center = camera_center(cam);
+
+    cam->radius += delta_units;
+    if (cam->radius < CAMERA_RADIUS_MIN) cam->radius = CAMERA_RADIUS_MIN;
+    if (cam->radius > CAMERA_RADIUS_MAX) cam->radius = CAMERA_RADIUS_MAX;
+
+    cam->position = vec3_sub(center, vec3_scale(cam->forward, cam->radius));
     keep_inside_flight_limits(cam);
 }
 
@@ -94,7 +165,8 @@ void camera_fly(camera_t *cam, float forward_units, float strafe_units, float ri
    around every solid object. A camera that has gone past one is pushed
    straight back to its surface, which makes it slide along the edge instead
    of sticking. Two passes, so that being pushed out of one object into the
-   next settles. */
+   next settles. The camera's direction and radius are not touched, so the
+   centre of the sphere simply moves with the camera. */
 // Author: Thomas Dzubin
 static void keep_inside_flight_limits(camera_t *cam)
 {

@@ -30,7 +30,7 @@ static void exit_to_loader(void)
    control (an arrow, F1/F2, or a p, y or r key, capital or not) counts as
    held for PICOCALC_KEY_HOLD_TIMEOUT_FRAMES frames after its last event,
    which comfortably bridges the ~100ms repeat gaps at our own FRAME_MS and
-   gives smooth flying and turning instead of visible steps. A capital
+   gives smooth orbiting and turning instead of visible steps. A capital
    letter is the same key with SHIFT, and is the opposite direction.
 
    H uses the same counter for the opposite purpose: it should toggle
@@ -39,7 +39,7 @@ static void exit_to_loader(void)
    seen recently) and is otherwise just re-armed like the others. */
 enum {
     HELD_LEFT, HELD_RIGHT, HELD_UP, HELD_DOWN,
-    HELD_RISE, HELD_DESCEND,
+    HELD_ZOOM_IN, HELD_ZOOM_OUT,
     HELD_PITCH_UP, HELD_PITCH_DOWN,
     HELD_YAW_RIGHT, HELD_YAW_LEFT,
     HELD_ROLL_RIGHT, HELD_ROLL_LEFT,
@@ -81,8 +81,8 @@ void input_poll(input_state_t *state)
         case KEY_RIGHT: ticks[HELD_RIGHT] = PICOCALC_KEY_HOLD_TIMEOUT_FRAMES; break;
         case KEY_UP:    ticks[HELD_UP] = PICOCALC_KEY_HOLD_TIMEOUT_FRAMES; break;
         case KEY_DOWN:  ticks[HELD_DOWN] = PICOCALC_KEY_HOLD_TIMEOUT_FRAMES; break;
-        case KEY_F1:    ticks[HELD_RISE] = PICOCALC_KEY_HOLD_TIMEOUT_FRAMES; break;
-        case KEY_F2:    ticks[HELD_DESCEND] = PICOCALC_KEY_HOLD_TIMEOUT_FRAMES; break;
+        case KEY_F1:    ticks[HELD_ZOOM_IN] = PICOCALC_KEY_HOLD_TIMEOUT_FRAMES; break;
+        case KEY_F2:    ticks[HELD_ZOOM_OUT] = PICOCALC_KEY_HOLD_TIMEOUT_FRAMES; break;
         case 'p': ticks[HELD_PITCH_UP] = PICOCALC_KEY_HOLD_TIMEOUT_FRAMES; break;
         case 'P': ticks[HELD_PITCH_DOWN] = PICOCALC_KEY_HOLD_TIMEOUT_FRAMES; break;
         case 'y': ticks[HELD_YAW_RIGHT] = PICOCALC_KEY_HOLD_TIMEOUT_FRAMES; break;
@@ -104,8 +104,8 @@ void input_poll(input_state_t *state)
     state->right = ticks[HELD_RIGHT] > 0;
     state->up = ticks[HELD_UP] > 0;
     state->down = ticks[HELD_DOWN] > 0;
-    state->rise = ticks[HELD_RISE] > 0;
-    state->descend = ticks[HELD_DESCEND] > 0;
+    state->zoom_in = ticks[HELD_ZOOM_IN] > 0;
+    state->zoom_out = ticks[HELD_ZOOM_OUT] > 0;
     state->pitch_up = ticks[HELD_PITCH_UP] > 0;
     state->pitch_down = ticks[HELD_PITCH_DOWN] > 0;
     state->yaw_right = ticks[HELD_YAW_RIGHT] > 0;

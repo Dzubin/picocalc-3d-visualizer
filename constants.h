@@ -154,24 +154,33 @@ static const unsigned short FACE_COLOR_PALETTE[10] = {
 // mesh_definitions.h).
 #define SHAPE_HALF_SIZE 80.0f
 
-// --- Camera (free flight) ---------------------------------------------------
-// The camera is a free-flight viewpoint: pitch (P), yaw (Y) and roll (R)
-// turn the view, the arrow keys fly it forward/back/left/right and F1/F2
-// fly it up/down (see camera.h). It starts at the place the old orbit
-// camera started: this distance from the origin, at this azimuth (around
-// the vertical axis) and elevation (above the ground plane), looking at the
-// origin. Z puts it back there.
+// --- Camera (orbit around a centre) -----------------------------------------
+// The camera sits on a sphere and always faces the centre of that sphere.
+// The arrow keys move it over the sphere's surface, and F1/F2 change the
+// sphere's radius (zoom). The centre is the point straight ahead of the
+// camera at that radius, so pitch (p/P) and yaw (y/Y), which turn the camera
+// where it is, move the centre; roll (r/R) turns the picture about the line
+// of sight and leaves it where it is (see camera.h). The camera starts at the
+// azimuth (around the vertical axis) and elevation (above the ground plane)
+// below, this distance from the origin, with the origin as the centre. Z puts
+// it back there.
 #define CAMERA_START_AZIMUTH_DEG 30.0f
 #define CAMERA_START_ELEVATION_DEG 20.0f
 #define CAMERA_START_DISTANCE 1875.0f
 #define CAMERA_TURN_SPEED_DEG_PER_SEC 90.0f
-#define CAMERA_MOVE_SPEED_UNITS_PER_SEC 600.0f
+#define CAMERA_ORBIT_SPEED_DEG_PER_SEC 90.0f
+#define CAMERA_ZOOM_SPEED_UNITS_PER_SEC 600.0f
 
-// The flight boundary: the camera is stopped at this distance from the
-// origin so every shape stays inside HIDDEN_LINE_FAR_PLANE's depth range
-// (see that constant's comment). It is also kept this far outside the
-// bounding sphere of every solid object, so it never ends up inside one;
-// NEAR_PLANE is 50, so this leaves a face a little room to be seen.
+// The sphere's radius is kept between these (F1/F2 move it).
+#define CAMERA_RADIUS_MIN 1100.0f
+#define CAMERA_RADIUS_MAX 2800.0f
+
+// The camera is also stopped at CAMERA_BOUNDARY_RADIUS from the origin, so
+// every shape stays inside HIDDEN_LINE_FAR_PLANE's depth range (see that
+// constant's comment), and it is kept CAMERA_SHAPE_CLEARANCE outside the
+// bounding sphere of every solid object so it never ends up inside one;
+// NEAR_PLANE is 50, so this leaves a face a little room to be seen. When
+// one of these limits holds the camera back, the centre moves with it.
 #define CAMERA_BOUNDARY_RADIUS 2800.0f
 #define CAMERA_SHAPE_CLEARANCE 100.0f
 
