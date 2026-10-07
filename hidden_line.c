@@ -40,6 +40,42 @@ void hidden_line_toggle(void)
 
 #define HIDDEN_LINE_MAX_POLYGON_VERTICES 8
 
+/* The free-flight camera can sit close to a shape, so a face may reach behind
+   the near plane. The polygon is clipped to this view-space depth before it
+   is projected: a little past NEAR_PLANE, because the projection functions
+   below reject anything at or behind NEAR_PLANE itself. */
+#define HIDDEN_LINE_CLIP_Z (NEAR_PLANE + 1.0f)
+
+/* Clips a convex world-space polygon against the near plane and returns the
+   result in view space (out_view holds at most vertex_count + 1 points).
+   Returns 0 when nothing of the polygon is in front of the camera. One
+   plane cut of a convex polygon gives a convex polygon, so the fan
+   triangulation in the callers stays valid. */
+// Author: Thomas Dzubin
+static int clip_polygon_to_near(const camera_t *cam, const vec3_t *vertices, int vertex_count,
+                                vec3_t *out_view)
+{
+    int count = 0;
+    int i;
+
+    for (i = 0; i < vertex_count; i++) {
+        vec3_t a = camera_world_to_view(cam, vertices[i]);
+        vec3_t b = camera_world_to_view(cam, vertices[(i + 1) % vertex_count]);
+        int a_in = a.z >= HIDDEN_LINE_CLIP_Z;
+        int b_in = b.z >= HIDDEN_LINE_CLIP_Z;
+
+        if (a_in) out_view[count++] = a;
+        if (a_in != b_in) {
+            float t = (HIDDEN_LINE_CLIP_Z - a.z) / (b.z - a.z);
+
+            out_view[count++] = vec3_make(a.x + (b.x - a.x) * t,
+                                          a.y + (b.y - a.y) * t,
+                                          HIDDEN_LINE_CLIP_Z);
+        }
+    }
+    return count;
+}
+
 #if USE_FIXED_POINT_MATH
 
 /* Fixed-point path: the depth buffer stores a quantized 1/z instead of a
@@ -60,7 +96,7 @@ void hidden_line_toggle(void)
 #define HIDDEN_LINE_INV_Z_MIN (1.0f / HIDDEN_LINE_FAR_PLANE)
 #define HIDDEN_LINE_INV_Z_MAX (1.0f / NEAR_PLANE)
 
-static int project_for_hidden_line(const camera_t *cam, vec3_t world_point, fixed_t *sx, fixed_t *sy, int *qinvz);
+static int project_for_hidden_line(vec3_t v, fixed_t *sx, fixed_t *sy, int *qinvz);
 static int64_t edge_function_raw(fixed_t ax, fixed_t ay, fixed_t bx, fixed_t by, fixed_t cx, fixed_t cy);
 static void rasterize_triangle(fixed_t x0, fixed_t y0, int q0,
                                 fixed_t x1, fixed_t y1, int q1,
@@ -90,12 +126,12 @@ int hidden_line_pixel_visible(int x, int y, int qinvz)
     return qinvz + HIDDEN_LINE_DEPTH_BIAS_QINVZ >= (int)depth_buffer[y][x];
 }
 
-/* Same near-plane bail-out reasoning as the float path (see below), plus
+/* Same as the float path (see below), taking a view-space point that
+   clip_polygon_to_near() already kept in front of the camera, plus
    hidden_line_quantize_view_z()'s one division per vertex. */
 // Author: Thomas Dzubin
-static int project_for_hidden_line(const camera_t *cam, vec3_t world_point, fixed_t *sx, fixed_t *sy, int *qinvz)
+static int project_for_hidden_line(vec3_t v, fixed_t *sx, fixed_t *sy, int *qinvz)
 {
-    vec3_t v = camera_world_to_view(cam, world_point);
     fixed_t fx, fy, fz, focal;
 
     if (v.z <= NEAR_PLANE) return 0;
@@ -120,15 +156,19 @@ static int project_for_hidden_line(const camera_t *cam, vec3_t world_point, fixe
 void hidden_line_rasterize_occluder_polygon(const camera_t *cam, const vec3_t *vertices, int vertex_count,
                                              int fill, unsigned short fill_color)
 {
-    fixed_t sx[HIDDEN_LINE_MAX_POLYGON_VERTICES], sy[HIDDEN_LINE_MAX_POLYGON_VERTICES];
-    int q[HIDDEN_LINE_MAX_POLYGON_VERTICES];
+    vec3_t view[HIDDEN_LINE_MAX_POLYGON_VERTICES + 1];
+    fixed_t sx[HIDDEN_LINE_MAX_POLYGON_VERTICES + 1], sy[HIDDEN_LINE_MAX_POLYGON_VERTICES + 1];
+    int q[HIDDEN_LINE_MAX_POLYGON_VERTICES + 1];
     int i;
 
     if (!enabled) return;
     if (vertex_count > HIDDEN_LINE_MAX_POLYGON_VERTICES) vertex_count = HIDDEN_LINE_MAX_POLYGON_VERTICES;
 
+    vertex_count = clip_polygon_to_near(cam, vertices, vertex_count, view);
+    if (vertex_count < 3) return;
+
     for (i = 0; i < vertex_count; i++) {
-        if (!project_for_hidden_line(cam, vertices[i], &sx[i], &sy[i], &q[i])) return;
+        if (!project_for_hidden_line(view[i], &sx[i], &sy[i], &q[i])) return;
     }
 
     for (i = 1; i < vertex_count - 1; i++) {
@@ -202,7 +242,7 @@ static void rasterize_triangle(fixed_t x0, fixed_t y0, int q0,
 #else /* !USE_FIXED_POINT_MATH */
 
 static depth_t quantize_depth(float z);
-static int project_for_hidden_line(const camera_t *cam, vec3_t world_point, float *sx, float *sy, float *inv_z);
+static int project_for_hidden_line(vec3_t v, float *sx, float *sy, float *inv_z);
 static float edge_function(float ax, float ay, float bx, float by, float cx, float cy);
 static void rasterize_triangle(float x0, float y0, float invz0,
                                 float x1, float y1, float invz1,
@@ -236,15 +276,14 @@ int hidden_line_pixel_visible(int x, int y, float z)
     return zq <= (int)depth_buffer[y][x] + HIDDEN_LINE_DEPTH_BIAS_QUANTIZED;
 }
 
-/* Projects a world point for occluder rasterization: screen (x, y) as
+/* Projects a view-space point for occluder rasterization: screen (x, y) as
    sub-pixel floats (for accurate triangle coverage) plus 1/view-z - used
    instead of z itself because 1/z is affine in screen space for a
    perspective-projected planar triangle (so it interpolates correctly
    across the triangle) while z itself is not. Returns 0 if the point is at
-   or behind NEAR_PLANE. */
-static int project_for_hidden_line(const camera_t *cam, vec3_t world_point, float *sx, float *sy, float *inv_z)
+   or behind NEAR_PLANE (clip_polygon_to_near() already keeps them out). */
+static int project_for_hidden_line(vec3_t v, float *sx, float *sy, float *inv_z)
 {
-    vec3_t v = camera_world_to_view(cam, world_point);
     if (v.z <= NEAR_PLANE) return 0;
 
     *sx = SCREEN_WIDTH / 2.0f + (v.x * FOCAL_LENGTH) / v.z;
@@ -257,19 +296,22 @@ static int project_for_hidden_line(const camera_t *cam, vec3_t world_point, floa
 void hidden_line_rasterize_occluder_polygon(const camera_t *cam, const vec3_t *vertices, int vertex_count,
                                              int fill, unsigned short fill_color)
 {
-    float sx[HIDDEN_LINE_MAX_POLYGON_VERTICES], sy[HIDDEN_LINE_MAX_POLYGON_VERTICES], siz[HIDDEN_LINE_MAX_POLYGON_VERTICES];
+    vec3_t view[HIDDEN_LINE_MAX_POLYGON_VERTICES + 1];
+    float sx[HIDDEN_LINE_MAX_POLYGON_VERTICES + 1], sy[HIDDEN_LINE_MAX_POLYGON_VERTICES + 1];
+    float siz[HIDDEN_LINE_MAX_POLYGON_VERTICES + 1];
     int i;
 
     if (!enabled) return;
     if (vertex_count > HIDDEN_LINE_MAX_POLYGON_VERTICES) vertex_count = HIDDEN_LINE_MAX_POLYGON_VERTICES;
 
-    /* Faces this close to the camera never happen in this scene - shapes
-       sit far inside the camera's orbit radius, see HIDDEN_LINE_FAR_PLANE's
-       comment in constants.h - so bailing out on the whole polygon if any
-       corner fails the near-plane test is simpler than clipping it, and in
-       practice never triggers. */
+    /* The free-flight camera can be close enough to a shape that part of a
+       face is behind it, so the polygon is clipped to the near plane first
+       (see clip_polygon_to_near()) instead of being dropped whole. */
+    vertex_count = clip_polygon_to_near(cam, vertices, vertex_count, view);
+    if (vertex_count < 3) return;
+
     for (i = 0; i < vertex_count; i++) {
-        if (!project_for_hidden_line(cam, vertices[i], &sx[i], &sy[i], &siz[i])) return;
+        if (!project_for_hidden_line(view[i], &sx[i], &sy[i], &siz[i])) return;
     }
 
     /* Fan triangulation from vertex 0 - valid because every face here is

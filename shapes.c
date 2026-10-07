@@ -72,8 +72,9 @@ static const mesh_t *mesh_for_object_type(object_type_t type)
 // resized, and recoloured.
 //
 // Keep a solid object's center a few hundred units clear of the origin (or
-// it crowds the axes) and clear of ORBIT_RADIUS_MIN, the camera's closest
-// zoom-in distance (or the camera can fly through it). The values below
+// it crowds the axes). The camera is kept out of every solid object by its
+// bounding sphere (see shape_bounding_radius()), so it cannot fly through
+// one wherever you put it. The values below
 // place one object per octant around the origin, with the star sharing the
 // line's octant and the sphere taking the octant that frees up - change
 // any of them freely, or delete/add entries - shape_count() and everything
@@ -161,6 +162,23 @@ void shape_edge_faces(int shape_index, int edge_index, int *out_face0, int *out_
 vec3_t shape_center(int shape_index)
 {
     return scene_shapes[shape_index].center;
+}
+
+float shape_bounding_radius(int shape_index)
+{
+    const shape_instance_t *instance = &scene_shapes[shape_index];
+    const mesh_t *mesh;
+    float farthest = 0.0f;
+    int i;
+
+    if (instance->type == OBJECT_STAR) return 0.0f;
+
+    mesh = mesh_for_object_type(instance->type);
+    for (i = 0; i < mesh->vertex_count; i++) {
+        float d = vec3_length(mesh->vertices[i]);
+        if (d > farthest) farthest = d;
+    }
+    return farthest * instance->scale;
 }
 
 unsigned short shape_color(int shape_index)

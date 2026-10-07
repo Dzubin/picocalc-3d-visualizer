@@ -88,6 +88,11 @@ void shape_edge_faces(int shape_index, int edge_index, int *out_face0, int *out_
 // star's entire position (a star has no other geometry).
 vec3_t shape_center(int shape_index);
 
+// The radius of the smallest sphere around shape_center() that holds every
+// vertex of this entry (its mesh's farthest vertex times its scale). Zero for
+// a star. The camera uses it to keep from flying into a solid object.
+float shape_bounding_radius(int shape_index);
+
 // This entry's flat colour, resolved from its 0-9 palette index (see
 // FACE_COLOR_PALETTE in constants.h) to the actual RGB565 value.
 unsigned short shape_color(int shape_index);

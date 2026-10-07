@@ -140,7 +140,7 @@ static const unsigned short FACE_COLOR_PALETTE[10] = {
 // the Status display section below) shows meaningfully varying integers
 // instead of rounding tiny single-digit values to near-nothing. Perspective
 // projection is invariant under uniformly scaling world distances and the
-// camera's orbit radius together (the scale factor cancels out of the x/z
+// camera's distance together (the scale factor cancels out of the x/z
 // and y/z ratios), so nothing on screen looks any different because of
 // this - only the numbers in the status display do.
 // The scene itself (every object, including stars - see shapes.c) is a
@@ -154,21 +154,30 @@ static const unsigned short FACE_COLOR_PALETTE[10] = {
 // mesh_definitions.h).
 #define SHAPE_HALF_SIZE 80.0f
 
-// --- Camera / orbit --------------------------------------------------------
-// The camera always looks at the origin, moving over the surface of a
-// sphere as the arrow keys are held. Its radius starts at ORBIT_RADIUS and
-// can be changed live with F1 (zoom in) / F2 (zoom out) - see
-// camera_zoom() - clamped to [ORBIT_RADIUS_MIN, ORBIT_RADIUS_MAX] so the
-// camera can never fly inside a shape (MIN) or push shapes past
-// HIDDEN_LINE_FAR_PLANE's depth range (MAX - see that constant's comment).
-// AXIS_LENGTH is independent of ORBIT_RADIUS on purpose - the axis markers
+// --- Camera (free flight) ---------------------------------------------------
+// The camera is a free-flight viewpoint: pitch (P), yaw (Y) and roll (R)
+// turn the view, the arrow keys fly it forward/back/left/right and F1/F2
+// fly it up/down (see camera.h). It starts at the place the old orbit
+// camera started: this distance from the origin, at this azimuth (around
+// the vertical axis) and elevation (above the ground plane), looking at the
+// origin. Z puts it back there.
+#define CAMERA_START_AZIMUTH_DEG 30.0f
+#define CAMERA_START_ELEVATION_DEG 20.0f
+#define CAMERA_START_DISTANCE 1875.0f
+#define CAMERA_TURN_SPEED_DEG_PER_SEC 90.0f
+#define CAMERA_MOVE_SPEED_UNITS_PER_SEC 600.0f
+
+// The flight boundary: the camera is stopped at this distance from the
+// origin so every shape stays inside HIDDEN_LINE_FAR_PLANE's depth range
+// (see that constant's comment). It is also kept this far outside the
+// bounding sphere of every solid object, so it never ends up inside one;
+// NEAR_PLANE is 50, so this leaves a face a little room to be seen.
+#define CAMERA_BOUNDARY_RADIUS 2800.0f
+#define CAMERA_SHAPE_CLEARANCE 100.0f
+
+// AXIS_LENGTH is independent of the camera on purpose - the axis markers
 // stop well short of the viewpoint rather than reaching out to it.
-#define ORBIT_RADIUS 1875.0f
-#define ORBIT_RADIUS_MIN 1100.0f
-#define ORBIT_RADIUS_MAX 2800.0f
 #define AXIS_LENGTH 250.0f      // shortened 75% from this project's original 1000.0f
-#define ORBIT_TURN_SPEED_DEG_PER_SEC 90.0f
-#define ORBIT_ZOOM_SPEED_UNITS_PER_SEC 600.0f
 
 #define FOCAL_LENGTH 320.0f     // perspective projection scale (world-scale-independent, see above)
 #define NEAR_PLANE 50.0f        // points/lines closer than this to the camera are clipped
@@ -184,7 +193,7 @@ static const unsigned short FACE_COLOR_PALETTE[10] = {
 // shape or the same shape's own far side. Toggle at runtime with H in case
 // it turns out too slow on real hardware (see input.h's toggle_hidden_line).
 // HIDDEN_LINE_FAR_PLANE only needs to comfortably cover this scene's extent
-// at the camera's farthest zoom-out (ORBIT_RADIUS_MAX plus the farthest a
+// at the camera's farthest point (CAMERA_BOUNDARY_RADIUS plus the farthest a
 // shape or axis endpoint can be from the origin), not be universally
 // correct for any possible scene or camera distance.
 #define HIDDEN_LINE_FAR_PLANE 4000.0f
@@ -221,7 +230,7 @@ static const unsigned short FACE_COLOR_PALETTE[10] = {
 // The PicoCalc keyboard driver delivers held-key events roughly every 100ms
 // (KEY_STATE_HOLD auto-repeat - see picocalc/drivers/keyboard.c). This many
 // frames of silence must pass before input_picocalc.c treats a direction as
-// released, so orbiting/zooming stays smooth at our own FRAME_MS instead of
+// released, so flying and turning stay smooth at our own FRAME_MS instead of
 // visibly stepping in 100ms jumps.
 #define PICOCALC_KEY_HOLD_TIMEOUT_FRAMES 4
 

@@ -12,9 +12,13 @@
 #define INPUT_H
 
 typedef struct {
-    int left, right;         // orbit azimuth
-    int up, down;             // orbit elevation
-    int zoom_in, zoom_out;    // F1/F2: move the camera toward/away from the origin (see camera_zoom())
+    int left, right;          // arrow keys: fly sideways (see camera_fly())
+    int up, down;             // arrow keys: fly forward / backward
+    int rise, descend;        // F1 / F2: fly straight up / down
+    int pitch_up, pitch_down; // p / P (SHIFT + p): tilt the view up / down (see camera_turn())
+    int yaw_right, yaw_left;  // y / Y: turn the view right / left
+    int roll_right, roll_left; // r / R: bank the view right / left
+    int reset_camera;         // z or Z: back to the starting view (true while the key is down)
     int toggle_hidden_line;   // true for exactly one input_poll() call per H key press (see hidden_line.h)
     int quit;
 } input_state_t;

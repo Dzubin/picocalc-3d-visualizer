@@ -6,10 +6,11 @@
 //  octagonal prism, house, line, sphere, and star, one of each - each with
 //  its own hand-picked position, size, and colour (see shapes.c's
 //  scene_shapes[] table), in 3D space with the X/Y/Z axes drawn through
-//  the origin. The arrow keys orbit the viewpoint around the scene; F1/F2
-//  move it closer/further away; the camera always faces the origin. A
-//  solid object's face colour only ever shows while hidden-line removal is
-//  on (see ENABLE_FACE_COLOR in constants.h); a star's colour always shows.
+//  the origin. The camera is a free-flight viewpoint: P, Y and R pitch,
+//  yaw and roll it, the arrow keys fly it forward/back/left/right and F1/F2
+//  fly it up/down. A solid object's face colour only ever shows while
+//  hidden-line removal is on (see ENABLE_FACE_COLOR in constants.h); a
+//  star's colour always shows.
 //
 //  This is stage 3 of a multi-stage project (stage 1 was a star cloud
 //  instead of solid shapes - dropped for being too slow to redraw every
@@ -24,9 +25,14 @@
 //  ------------------------------------------------------------------------
 //  Controls
 //  ------------------------------------------------------------------------
-//    Arrow keys ....... orbit the camera around the scene
-//    F1 ............... zoom in (move the camera toward the origin)
-//    F2 ............... zoom out (move the camera away from the origin)
+//    UP / DOWN ........ fly forward / backward along the line of sight
+//    LEFT / RIGHT ..... fly sideways (level with the ground, never tipped by roll)
+//    F1 / F2 .......... fly straight up / down
+//    p / P ............ pitch the view up / down (P is SHIFT + p)
+//    y / Y ............ yaw the view right / left
+//    r / R ............ roll (bank) the view right / left
+//    z / Z ............ back to the starting view
+//    The camera is held inside a boundary sphere and out of the solid objects.
 //    H ................ toggle hidden-line removal on/off (see hidden_line.h)
 //                        - in case it's too slow on real hardware; also
 //                        turns face colour on/off, since colour only ever
@@ -38,7 +44,7 @@
 //  Source layout:
 //    constants.h ......... every tunable value and colour
 //    vec3.h .............. portable 3D vector math
-//    camera.h / .c ....... the orbit camera
+//    camera.h / .c ....... the free-flight camera
 //    mesh_definitions.h ... raw solid-object topology (cube, pyramid,
 //                          tetrahedron, octagonal prism, house, line,
 //                          sphere) - not meant to be edited, see its own
@@ -73,7 +79,7 @@ int main(void)
 
     gfx_init();
     input_init();
-    camera_init(&cam, 30.0f, 20.0f);
+    camera_init(&cam);
 
     for (;;) {
         input_state_t in;
@@ -105,17 +111,29 @@ int main(void)
 // Author: Thomas Dzubin
 static void apply_input(camera_t *cam, const input_state_t *in, float dt_seconds)
 {
-    float step = ORBIT_TURN_SPEED_DEG_PER_SEC * dt_seconds;
-    float zoom_step = ORBIT_ZOOM_SPEED_UNITS_PER_SEC * dt_seconds;
-    float d_azimuth = 0.0f, d_elevation = 0.0f;
+    float turn = CAMERA_TURN_SPEED_DEG_PER_SEC * dt_seconds;
+    float move = CAMERA_MOVE_SPEED_UNITS_PER_SEC * dt_seconds;
+    float pitch = 0.0f, yaw = 0.0f, roll = 0.0f;
+    float forward = 0.0f, strafe = 0.0f, rise = 0.0f;
 
-    if (in->left)  d_azimuth -= step;
-    if (in->right) d_azimuth += step;
-    if (in->up)    d_elevation += step;
-    if (in->down)  d_elevation -= step;
+    if (in->reset_camera) {
+        camera_reset(cam);
+        return;
+    }
 
-    camera_orbit(cam, d_azimuth, d_elevation);
+    if (in->pitch_up)   pitch += turn;
+    if (in->pitch_down) pitch -= turn;
+    if (in->yaw_right)  yaw += turn;
+    if (in->yaw_left)   yaw -= turn;
+    if (in->roll_right) roll += turn;
+    if (in->roll_left)  roll -= turn;
+    camera_turn(cam, pitch, yaw, roll);
 
-    if (in->zoom_in)  camera_zoom(cam, -zoom_step);
-    if (in->zoom_out) camera_zoom(cam, zoom_step);
+    if (in->up)      forward += move;
+    if (in->down)    forward -= move;
+    if (in->right)   strafe += move;
+    if (in->left)    strafe -= move;
+    if (in->rise)    rise += move;
+    if (in->descend) rise -= move;
+    camera_fly(cam, forward, strafe, rise);
 }

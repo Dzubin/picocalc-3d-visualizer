@@ -8,8 +8,9 @@ PicoCalc, easy to fork and play with. The scene is 8 objects, one of each
 approved type: a cube, a square-base pyramid, a tetrahedron, an octagonal
 prism (a stand-in for a cylinder), a house, a line, a sphere (a 20-face
 icosahedron), and a single-pixel star. They sit in 3D space with the X/Y/Z
-axes drawn through the origin, viewed from an orbit camera you fly around
-the scene with the arrow keys (and zoom in/out with F1/F2). Hidden-line
+axes drawn through the origin, viewed from a free-flight camera: you fly it
+through the scene with the arrow keys and F1/F2, and pitch, yaw and roll it
+with the P, Y and R keys. Hidden-line
 removal (edges and stars alike hidden behind an object's own far side or
 behind a different object) can be toggled on and off live, and while it's
 on each solid object's faces are filled with a flat, unshaded colour.
@@ -41,10 +42,20 @@ frame rate both with and without it.
 
 ## Controls
 
-- **Arrow keys** - orbit the camera around the scene (the camera always
-  faces the origin).
-- **F1 / F2** - zoom in / out (move the camera toward/away from the
-  origin).
+- **UP / DOWN** - fly forward / backward along the way you are looking
+  (pitch the view up and UP climbs as it goes forward).
+- **LEFT / RIGHT** - fly sideways, level with the ground. Rolling the view
+  never changes where the arrow keys take you.
+- **F1 / F2** - fly straight up / down.
+- **p / P** - pitch the view up / down (`P` is SHIFT + `p`).
+- **y / Y** - yaw (turn) the view right / left.
+- **r / R** - roll (bank) the view right / left.
+- **z / Z** - put the camera back at its starting place, looking at the
+  origin.
+
+  The camera turns about its own axes like an aircraft, so you can pitch
+  straight over the top or roll any amount. It stops at a boundary sphere
+  around the scene, and it cannot fly into a solid object.
 - **H** - toggle hidden-line removal (and with it, face colour) on/off
   (watch the "H KEY=HLR:1"/"H KEY=HLR:0" indicator, top-right) - useful for
   comparing the frame rate on real hardware.
