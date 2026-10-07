@@ -2,7 +2,29 @@
 
 ## [Unreleased]
 
+### Added
+- A title screen comes first: the program's name, its version and its author,
+  and "PRESS ANY KEY TO CONTINUE". Any key goes on to the viewer. The version
+  is the one in `constants.h`.
+- `H` shows a help screen that lists the keys and what they do; any key
+  returns to the scene. A reminder ("H KEY=HELP") sits in the top-left corner.
+  The help and title screens are drawn in the PicoCalc's own 8x10 font (the
+  glyph table from `picocalc/drivers/font-8x10.c`, which the desktop build now
+  compiles too, with a stand-in for the Pico SDK header it includes in
+  `desktop/stub/`), so they have lower case; the small hand-made font is
+  still used for the status numbers. On the PicoCalc the help screen ignores a
+  held `H` until it stops repeating, so it does not close straight away. On the
+  desktop build `Q` now quits, like on the PicoCalc.
+
 ### Changed
+- Hidden-line removal is toggled with `L` (it was `H`); the indicator reads
+  "L KEY=HLR:1".
+- `ESC` and `Q` go back to the title screen instead of leaving the program. On
+  the title screen they ask "Leave the program?" and `Y` leaves (to the UF2
+  Loader menu on the PicoCalc, closing the window on the desktop); any other
+  key stays. The camera is kept when you go back to the viewer. The "Press any
+  key" prompts on the title and help screens are cyan, because red is hard to
+  read on the PicoCalc screen.
 - `p`/`P` pitch, `y`/`Y` yaw and `r`/`R` roll the camera (the capital letter,
   SHIFT + the key, is the other direction), and `z` or `Z` puts it back at its
   starting place. The camera is still on a sphere and faces its centre, and the

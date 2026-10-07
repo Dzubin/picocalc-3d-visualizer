@@ -27,6 +27,12 @@ add_executable(${APP_NAME}
         mesh_definitions.h
         hidden_line.c
         hidden_line.h
+        help.c
+        help.h
+        help_text.h
+        title.c
+        title.h
+        title_text.h
         renderer.c
         renderer.h
         text.c
@@ -41,10 +47,13 @@ add_executable(${APP_NAME}
         desktop/gfx_desktop.c
         desktop/input_desktop.c
         desktop/timing_desktop.c
+        picocalc/drivers/font-8x10.c
+        picocalc/drivers/font.h
         )
 
 target_include_directories(${APP_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
+        ${CMAKE_CURRENT_LIST_DIR}/desktop/stub
         ${SDL2_INCLUDE_DIRS}
         )
 

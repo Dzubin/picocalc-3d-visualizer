@@ -1,5 +1,6 @@
 #include "../input.h"
 #include <SDL.h>
+#include <stdlib.h>
 
 void input_init(void)
 {
@@ -20,16 +21,18 @@ void input_poll(input_state_t *state)
     state->yaw_right = state->yaw_left = 0;
     state->roll_right = state->roll_left = 0;
     state->reset_camera = 0;
-    state->toggle_hidden_line = state->quit = 0;
+    state->toggle_hidden_line = state->show_help = state->show_title = state->quit = 0;
 
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) state->quit = 1;
         /* !event.key.repeat: fire once on the initial press, not on every
-           OS auto-repeat KEYDOWN while H is held - a toggle should flip
+           OS auto-repeat KEYDOWN while L or H is held - a toggle should flip
            once per physical press. */
-        if (event.type == SDL_KEYDOWN && !event.key.repeat &&
-            event.key.keysym.scancode == SDL_SCANCODE_H) {
-            state->toggle_hidden_line = 1;
+        if (event.type == SDL_KEYDOWN && !event.key.repeat) {
+            if (event.key.keysym.scancode == SDL_SCANCODE_L) state->toggle_hidden_line = 1;
+            if (event.key.keysym.scancode == SDL_SCANCODE_H) state->show_help = 1;
+            if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE ||
+                event.key.keysym.scancode == SDL_SCANCODE_Q) state->show_title = 1;
         }
     }
 
@@ -48,5 +51,35 @@ void input_poll(input_state_t *state)
     if (keys[SDL_SCANCODE_Y]) { if (shifted) state->yaw_left = 1;   else state->yaw_right = 1; }
     if (keys[SDL_SCANCODE_R]) { if (shifted) state->roll_left = 1;  else state->roll_right = 1; }
     if (keys[SDL_SCANCODE_Z]) state->reset_camera = 1;
-    if (keys[SDL_SCANCODE_ESCAPE]) state->quit = 1;
+}
+
+// Author: Thomas Dzubin
+input_key_t input_wait_for_key(void)
+{
+    SDL_Event event;
+
+    /* A key that was already down when the help screen opened has had its one
+       KEYDOWN (this ignores the OS auto-repeat ones), so the first KEYDOWN
+       from here on is a new press. */
+    while (SDL_WaitEvent(&event)) {
+        if (event.type == SDL_QUIT) return INPUT_KEY_CLOSED;
+        if (event.type == SDL_KEYDOWN && !event.key.repeat) {
+            switch (event.key.keysym.scancode) {
+            case SDL_SCANCODE_ESCAPE:
+            case SDL_SCANCODE_Q:
+                return INPUT_KEY_LEAVE;
+            case SDL_SCANCODE_Y:
+                return INPUT_KEY_YES;
+            default:
+                return INPUT_KEY_ANY;
+            }
+        }
+    }
+    return INPUT_KEY_CLOSED;
+}
+
+void input_leave_program(void)
+{
+    SDL_Quit();
+    exit(0);
 }

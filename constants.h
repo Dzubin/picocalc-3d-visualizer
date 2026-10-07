@@ -44,6 +44,7 @@
 #define COLOR_AXIS_Y      RGB565(60, 255, 60)       // green
 #define COLOR_AXIS_Z      RGB565(90, 140, 255)      // blue
 #define COLOR_STATUS      RGB565(255, 255, 255)
+#define COLOR_CYAN        RGB565(0, 255, 255)       // the help screen's prompt; also listed in color_palette.h
 
 // --- Face/star colouring (experimental) ----------------------------------
 // Flat, unshaded colour, chosen per scene entry (see shapes.c's
@@ -242,6 +243,10 @@ static const unsigned short FACE_COLOR_PALETTE[10] = {
 // released, so flying and turning stay smooth at our own FRAME_MS instead of
 // visibly stepping in 100ms jumps.
 #define PICOCALC_KEY_HOLD_TIMEOUT_FRAMES 4
+
+// The help screen ignores keys until none has arrived for this long, so the H
+// that opened it, if still held and repeating, does not close it again.
+#define HELP_QUIET_MS 300
 
 // --- Leaving for the PicoCalc UF2 Loader (PicoCalc backend only) -------------
 // The loader has no call for an app to use, but its own menu hands commands to

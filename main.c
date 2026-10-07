@@ -35,12 +35,14 @@
 //    z / Z ............ back to the starting view
 //    The arrows work in the world's frame, so a roll never changes them. The
 //    camera is held inside a boundary sphere and out of the solid objects.
-//    H ................ toggle hidden-line removal on/off (see hidden_line.h)
+//    L ................ toggle hidden-line removal on/off (see hidden_line.h)
 //                        - in case it's too slow on real hardware; also
 //                        turns face colour on/off, since colour only ever
 //                        draws alongside hidden-line removal
-//    ESC .............. quit (desktop build closes; PicoCalc build also
-//                        takes Q and leaves for the PicoCalc UF2 Loader menu)
+//    H ................ the help screen (any key comes back to the scene)
+//    ESC / Q .......... back to the title screen; on the title screen they
+//                        leave the program after a confirmation (desktop
+//                        build closes; PicoCalc build goes to the UF2 Loader menu)
 //    ~  (tilde) ....... reboot into BOOTSEL mode (PicoCalc build only)
 //
 //  Source layout:
@@ -55,9 +57,13 @@
 //                          stars) - a plain, hand-edited scene table at
 //                          the top of shapes.c is the one place to
 //                          add/move/remove/resize/recolour one
-//    hidden_line.h / .c ... hidden-line removal (toggle: H) and, while it's
+//    hidden_line.h / .c ... hidden-line removal (toggle: L) and, while it's
 //                          on, flat per-face colour fill
 //    renderer.h / .c ..... projects and draws the axes + every object
+//    help.h / .c, help_text.h ... the help screen and its words
+//    title.h / .c, title_text.h ... the title screen shown first and the
+//                          leave-the-program question
+//    text.h / .c ......... the built-in pixel font
 //    gfx.h, input.h, timing.h ... the only platform seams; implemented by
 //      desktop/ (SDL2) and picocalc/ (real hardware)
 //
@@ -70,18 +76,62 @@
 #include "shapes.h"
 #include "hidden_line.h"
 #include "renderer.h"
+#include "help.h"
+#include "title.h"
 
+static int run_viewer(camera_t *cam);
+static int show_title_screen(void);
 static void apply_input(camera_t *cam, const input_state_t *in, float dt_seconds);
 
 // Author: Thomas Dzubin
 int main(void)
 {
     camera_t cam;
-    float dt_seconds = FRAME_MS / 1000.0f;
 
     gfx_init();
     input_init();
     camera_init(&cam);
+
+    /* The title screen comes first and again whenever Q or ESC leaves the
+       viewer; any key on it goes into the viewer, and Q or ESC on it leaves the
+       program after a confirmation. The camera is kept between visits. */
+    while (show_title_screen()) {
+        if (run_viewer(&cam)) break;
+    }
+
+    return 0;
+}
+
+/* Shows the title screen and waits for a key. Returns 1 to go on to the
+   viewer, 0 if the program should end (the window was closed, or Q / ESC was
+   confirmed - on the PicoCalc that confirmation does not return at all). */
+// Author: Thomas Dzubin
+static int show_title_screen(void)
+{
+    for (;;) {
+        input_key_t key;
+
+        title_draw();
+        key = input_wait_for_key();
+        if (key == INPUT_KEY_CLOSED) return 0;
+        if (key != INPUT_KEY_LEAVE) return 1;
+
+        title_leave_draw();
+        key = input_wait_for_key();
+        if (key == INPUT_KEY_CLOSED) return 0;
+        if (key == INPUT_KEY_YES) {
+            input_leave_program();
+            return 0;
+        }
+    }
+}
+
+/* The viewer: runs frames until Q or ESC asks for the title screen (returns 0)
+   or the desktop window is closed (returns 1). */
+// Author: Thomas Dzubin
+static int run_viewer(camera_t *cam)
+{
+    float dt_seconds = FRAME_MS / 1000.0f;
 
     for (;;) {
         input_state_t in;
@@ -89,11 +139,17 @@ int main(void)
         unsigned long elapsed_us, target_us;
 
         input_poll(&in);
-        if (in.quit) break;
+        if (in.quit) return 1;
+        if (in.show_title) return 0;
         if (in.toggle_hidden_line) hidden_line_toggle();
+        if (in.show_help) {
+            help_draw();
+            if (input_wait_for_key() == INPUT_KEY_CLOSED) return 1;
+            continue;
+        }
 
-        apply_input(&cam, &in, dt_seconds);
-        renderer_draw_frame(&cam);
+        apply_input(cam, &in, dt_seconds);
+        renderer_draw_frame(cam);
 
         /* Sleep only what's left of the FRAME_MS budget, not a flat
            FRAME_MS on top of however long input+render just took. On the
@@ -106,8 +162,6 @@ int main(void)
             platform_sleep_ms((int)((target_us - elapsed_us) / 1000u));
         }
     }
-
-    return 0;
 }
 
 // Author: Thomas Dzubin

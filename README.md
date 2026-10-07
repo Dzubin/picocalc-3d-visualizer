@@ -42,6 +42,9 @@ frame rate both with and without it.
 
 ## Controls
 
+A title screen (the name, the version and the author) comes first; any key goes on
+to the viewer.
+
 - **LEFT / RIGHT** - move the camera round the sphere's vertical axis.
 - **UP / DOWN** - move the camera up / down over the sphere, over the top
   and down the other side if you keep going. The camera always faces the
@@ -59,13 +62,16 @@ frame rate both with and without it.
   they move the centre (roll does not). The arrow keys then move the camera
   round the new centre. The camera stops at a boundary sphere around the
   scene, and cannot go inside a solid object.
-- **H** - toggle hidden-line removal (and with it, face colour) on/off
-  (watch the "H KEY=HLR:1"/"H KEY=HLR:0" indicator, top-right) - useful for
+- **L** - toggle hidden-line removal (and with it, face colour) on/off
+  (watch the "L KEY=HLR:1"/"L KEY=HLR:0" indicator, top-right) - useful for
   comparing the frame rate on real hardware.
-- **ESC** - quit: the desktop build closes; the PicoCalc build leaves for the
-  PicoCalc **UF2 Loader** menu (it asks the loader for its menu through the
-  watchdog scratch registers; with no loader installed the program just
-  restarts). **Q** does the same on the PicoCalc build.
+- **H** - show a help screen that lists these keys. Any key takes you back
+  to the scene.
+- **ESC** or **Q** - back to the title screen. On the title screen they ask
+  "Leave the program?"; **Y** leaves (the desktop build closes; the PicoCalc
+  build goes to the PicoCalc **UF2 Loader** menu, which it asks for through the
+  watchdog scratch registers, and with no loader installed the program just
+  restarts) and any other key stays. Closing the desktop window also leaves.
 - **`~`** (SHIFT + backtick) - reboot into BOOTSEL mode (PicoCalc build
   only, works at all times).
 

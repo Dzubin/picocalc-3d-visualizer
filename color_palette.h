@@ -8,8 +8,8 @@
 //
 //  This list must be kept in sync BY HAND with constants.h: it mirrors
 //  FACE_COLOR_PALETTE's 10 entries (same order, same indices 0-9) plus the
-//  3 axis colours, since those 13 are the only RGB565 values this project
-//  ever actually draws. A colour added to constants.h without a matching
+//  3 axis colours and the cyan of the help screen's prompt, since those 14 are
+//  the only RGB565 values this project ever actually draws. A colour added to constants.h without a matching
 //  entry here silently falls back to color_palette_index()'s default
 //  (index 0, black) instead of failing loudly - deliberately simple over
 //  automatic, since deriving this table from FACE_COLOR_PALETTE at compile
@@ -36,6 +36,7 @@ static const unsigned short color_palette[] = {
     COLOR_AXIS_X,        // 10
     COLOR_AXIS_Y,        // 11
     COLOR_AXIS_Z,        // 12
+    COLOR_CYAN,          // 13
 };
 #define COLOR_PALETTE_SIZE ((int)(sizeof(color_palette) / sizeof(color_palette[0])))
 

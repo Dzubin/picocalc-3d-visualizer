@@ -42,6 +42,12 @@ add_executable(picocalc-3d-visualizer
         ../mesh_definitions.h
         ../hidden_line.c
         ../hidden_line.h
+        ../help.c
+        ../help.h
+        ../help_text.h
+        ../title.c
+        ../title.h
+        ../title_text.h
         ../renderer.c
         ../renderer.h
         ../text.c

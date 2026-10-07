@@ -23,6 +23,7 @@ static void draw_world_segment(const camera_t *cam, vec3_t world_v0, vec3_t worl
 static void draw_position_readout(const camera_t *cam);
 static void draw_readout_line(const char *label, float value, int y, unsigned short color);
 static void draw_hidden_line_status(void);
+static void draw_help_hint(void);
 
 // Author: Thomas Dzubin
 void renderer_draw_frame(const camera_t *cam)
@@ -43,6 +44,7 @@ void renderer_draw_frame(const camera_t *cam)
 
     draw_position_readout(cam);
     draw_hidden_line_status();
+    draw_help_hint();
 
     gfx_present();
 }
@@ -435,13 +437,19 @@ static void draw_position_readout(const camera_t *cam)
 }
 
 /* Whether hidden-line removal is currently on, in the top-right corner -
-   toggled with H (see input.h's toggle_hidden_line). */
+   toggled with L (see input.h's toggle_hidden_line). */
 static void draw_hidden_line_status(void)
 {
     char line[24];
 
-    snprintf(line, sizeof line, "H KEY=HLR:%d", hidden_line_enabled());
+    snprintf(line, sizeof line, "L KEY=HLR:%d", hidden_line_enabled());
     text_draw(SCREEN_WIDTH - STATUS_MARGIN - text_width(line), STATUS_MARGIN, line, COLOR_STATUS);
+}
+
+/* A reminder of how to get the help screen, in the top-left corner. */
+static void draw_help_hint(void)
+{
+    text_draw(STATUS_MARGIN, STATUS_MARGIN, "H KEY=HELP", COLOR_STATUS);
 }
 
 static void draw_readout_line(const char *label, float value, int y, unsigned short color)
