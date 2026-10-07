@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [V1.10A] - 2026-10-07
+
 ### Added
 - A title screen comes first: the program's name, its version and its author,
   and "PRESS ANY KEY TO CONTINUE". Any key goes on to the viewer. The version

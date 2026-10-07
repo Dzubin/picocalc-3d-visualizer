@@ -8,7 +8,7 @@
 #pragma once
 
 // --- Program identity --------------------------------------------------
-#define VERSION "V1.0RC2"
+#define VERSION "V1.10A"
 
 // --- Experimental fixed-point hot path --------------------------------------
 // Set to 1 to route the per-frame/per-pixel rendering math (perspective
