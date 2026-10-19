@@ -135,4 +135,6 @@ by Blair Leduc (vendored read-only in `picocalc/drivers/`).
 
 This project is released under the MIT License (see `LICENSE`). The vendored
 drivers in `picocalc/drivers/` are Blair Leduc's, also MIT-licensed - his
-license is kept alongside them in `picocalc/drivers/LICENSE`.
+license is kept alongside them in `picocalc/drivers/LICENSE`. They are his code of 2026-10-18
+(commit `85a002e`) with two local changes: `lcd_putstr()` in `lcd.c` cuts a string off at the right
+edge of the display, and `keyboard.c` treats a held key as a press, so that the arrow keys auto-repeat.
